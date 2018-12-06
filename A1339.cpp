@@ -49,16 +49,13 @@
 #define CUS_E      (0x1F) // Customer EEPROM Space
 
 
-
-
-
-
-
-
 // Constants below are used in the readRegister and setRegister funcitons
-#define CMD_READ     (0x80) // this was modified (from the eeva project) to work for 16-bit values
-#define CMD_WRITE    (0x00) // this was modified (from the eeva project) to work for 16-bit values
-#define ADDR_MASK    (0x7F) // this was modified (from the eeva project) to work for 16-bit values
+#define CMD_READ        (0x80)
+#define CMD_WRITE       (0x00)
+#define ADDR_MASK       (0x7F)
+#define CMD_READ_16     (0x8000)
+#define CMD_WRITE_16    (0x0000)
+#define ADDR_MASK_16    (0x7FFF)
 
 
 // Constants for setting bits in registers
@@ -67,8 +64,8 @@
 // Zero Position Reset
 
 // Pass the constants below as the clearbits or setbits arguments of the modifyRegister function
-#define DIR       (0x0004) // Rotation Direction: LOW=Clockwise HIGH=Counter-Clockwise ---------------- ATTENTION! This might be backwards!
-#define DAECDIS   (0x0010) // Dynamic Angle Compensation: LOW=on HIGH=off ----------------------------- Seems stupid to ever turn this off because you can always read either from the ANGLEUNC and ANGLECOM registers
+#define DIR       (0x0004) // Rotation Direction: LOW=Clockwise HIGH=Counter-Clockwise
+#define DAECDIS   (0x0010) // Dynamic Angle Compensation: LOW=on HIGH=off
 
 
 A1339::A1339()
@@ -76,14 +73,54 @@ A1339::A1339()
 
 }
 
-uint16_t A1339::readRegister(uint8_t address)
+void unlock()
+{
+
+}
+
+double getAngle()
+{
+
+}
+
+void setRotDir(int dir)
+{
+
+}
+
+void setZeroPosOffset(double rad)
+{
+
+}
+
+void setHysterisis(double deg)
+{
+
+}
+
+void burnRotDir(int dir)
+{
+
+}
+
+void burnZeroPosOffset(double rad)
+{
+
+}
+
+void burnHysterisis(double deg)
+{
+    
+}
+
+uint8_t A1339::readRegister(uint8_t address)
 {
     address &= ADDR_MASK;
 
     selectChip();
 
     spi_->sendWord(CMD_READ | address);
-    uint16_t value = spi_->sendWord(0);
+    uint8_t value = spi_->sendWord(0);
 
     deselectChip();
 
@@ -104,11 +141,54 @@ void A1339::setRegister(uint8_t address, uint8_t value)
 
 void A1339::modifyRegister(uint8_t address,  uint8_t clearbits, uint8_t setbits)
 {
+    uint8_t value = readRegister(address);
+    value &= ~clearbits;
+    value |=  setbits;
+    setRegister(address, value);
+}
+
+uint16_t A1339::readRegister16(uint16_t address)
+{
+    address &= ADDR_MASK_16;
+
+    selectChip();
+
+    spi_->sendWord(CMD_READ_16 | address);
+    uint16_t value = spi_->sendWord(0);
+
+    deselectChip();
+
+    return value;
+}
+
+void A1339::setRegister16(uint16_t address, uint16_t value)
+{
+    address &= ADDR_MASK_16;
+
+    selectChip();
+    usleep(1);
+    spi_->sendWord(CMD_WRITE_16 | address);
+    spi_->sendWord(value);
+    usleep(1);
+    deselectChip();
+}
+
+void A1339::modifyRegister16(uint16_t address,  uint16_t clearbits, uint16_t setbits)
+{
     uint16_t value = readRegister(address);
     value &= ~clearbits;
     value |=  setbits;
     setRegister(address, value);
 }
+
+
+
+
+
+
+
+
+
 
 double A1339::getAngle()
 {
@@ -116,7 +196,7 @@ double A1339::getAngle()
 
 }
 
-void A1339::setZeroPos()
+void A1339::setZeroPosOffset()
 {
     uint16_t current_pos = readRegister(ANGLECOM); // Maybe this should be ANGLEUNC? I'm not sure.
     setRegister(ZPOSM, (current_pos & 0x00FF))
