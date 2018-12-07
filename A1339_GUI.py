@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QLineEdit, QDialog,
 from PyQt5.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
 import platform
 import sys
+import serial
 
 class A1339_GUI(QMainWindow):
     
@@ -23,6 +24,7 @@ class A1339_GUI(QMainWindow):
         
         widget = QDialog()
         
+        # Set up message at the top of the GUI
         self.unlockLabel1 = QLabel('<font size=3>The A1339 encoder must be unlocked before it possible to write to EEPROM or Shadow Memory.</font>')
         self.unlockLabel2 = QLabel('<font size=3>EEPROM and Shadow Memory are automatically re-locked when power to the encoder is lost.</font>')
         
@@ -32,18 +34,8 @@ class A1339_GUI(QMainWindow):
         self.unlockBtn.clicked.connect(self.make_btn_green)
         self.unlockBtn.resize(self.unlockBtn.sizeHint())
 
-        # Set up "Set Zero Position" button
-        # self.zeroPosBtn = QPushButton('Press to set encoder zero position to current encoder position', self)
-        # self.zeroPosBtn.clicked.connect(self.set_zero_pos_to_current)
-        # self.message = QMessageBox()
-        # self.message.setText("Zero position has been set")
-        # self.zeroPosBtn.clicked.connect(self.message.exec)
-        # self.zeroPosBtn.resize(self.zeroPosBtn.sizeHint())
-
         # Set up "Rotation Direction" dropdown menu
         self.rotDirDropDown = QComboBox()
-        #self.funcDropDown.setInsertPolicy(2)
-        #self.funcDropDown.setEditable(True)
         self.rotDirDropDown.addItem('CW')
         self.rotDirDropDown.addItem('CCW')
 
@@ -54,6 +46,14 @@ class A1339_GUI(QMainWindow):
         # Set up "Hysteresis" line edit
         self.hystLineEdit = QLineEdit()
         self.hystLineEdit.setPlaceholderText("Enter value from 0 to 1.384 (in degrees)")
+
+        # Set up "COM Port" line edit
+        self.COMLineEdit = QLineEdit()
+        self.COMLineEdit.setPlaceholderText("Enter COM1 or COM2 or COM3 or etc.")
+
+        # Set up "Baud Rate" line edit
+        self.BaudLineEdit = QLineEdit()
+        self.BaudLineEdit.setPlaceholderText("Enter 9600 or 4800 or etc.")
 
         # Set up "Write to Shadow Memory" button
         self.shadMemBtn = QPushButton('Write config settings to Shadow Memory', self)
@@ -69,7 +69,6 @@ class A1339_GUI(QMainWindow):
         self.eepromBtn.clicked.connect(self.burn_to_eeprom)
         self.eepromBtn.resize(self.eepromBtn.sizeHint())
 
-        
         # Set up "Device Unlock" Group Box
         self.unlockBox = QGroupBox("Device Unlock")
         self.unlockLayout = QVBoxLayout()
@@ -77,18 +76,6 @@ class A1339_GUI(QMainWindow):
         self.unlockLayout.addWidget(self.unlockLabel2)
         self.unlockLayout.addWidget(self.unlockBtn)
         self.unlockBox.setLayout(self.unlockLayout)
-        
-        # Set up "Zero Position" Group Box
-        # self.zeroPosBox = QGroupBox("Zero Position")
-        # self.zeroPosLayout = QVBoxLayout()
-        # self.zeroPosLayout.addWidget(self.zeroPosBtn)
-        # self.zeroPosBox.setLayout(self.zeroPosLayout)
-
-        # Set up "Configuration Options" Form Layout
-        # self.configFormLayout = QFormLayout()
-        # self.configFormLayout.addRow("Rotation Direction:", self.rotDirDropDown)
-        # self.configFormLayout.addRow("Zero Position Offset:", self.zeroPosLineEdit)
-        # self.configFormLayout.addRow("Hysteresis:", self.hystLineEdit)
 
         # Set up "Configuration Options" Group Box
         self.configBox = QGroupBox("Configuration Options")
@@ -97,11 +84,19 @@ class A1339_GUI(QMainWindow):
         self.configLayout.addRow("Zero Position Offset:", self.zeroPosLineEdit)
         self.configLayout.addRow("Hysteresis:", self.hystLineEdit)
         self.configBox.setLayout(self.configLayout)
+
+        # Set up "Serial Options" Group Box
+        self.serialBox = QGroupBox("Serial Options")
+        self.serialLayout = QFormLayout()
+        self.serialLayout.addRow("COM Port:", self.COMLineEdit)
+        self.serialLayout.addRow("Baud Rate:", self.BaudLineEdit)
+        self.serialBox.setLayout(self.serialLayout)
         
         # Set up the main GUI layout
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.unlockBox)
         mainLayout.addWidget(self.configBox)
+        mainLayout.addWidget(self.serialBox)
 
         burnButtonsLayout = QHBoxLayout()
         burnButtonsLayout.addWidget(self.shadMemBtn)
