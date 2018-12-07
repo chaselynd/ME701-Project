@@ -31,7 +31,7 @@ public:
 
     // Write the angle hysteresis threshold to Shadow Memory
     // Binary scaling is used
-    void setHysterisis(float deg);
+    void setHysteresis(float deg);
 
     //---------------------------------- EEPROM ----------------------------------
     // Burn which rotation direction (CW or CCW) is positive to EEPROM

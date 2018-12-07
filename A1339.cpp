@@ -102,7 +102,7 @@ void A1339::setZeroPosOffset(float deg)
     modifyRegister32(ANG_S, ~conv, conv);
 }
 
-void A1339::setHysterisis(float deg)
+void A1339::setHysteresis(float deg)
 {
     uint32_t conv = (deg*(4096/360)) & 0x0003F000;
     modifyRegister32(ANG_S, ~conv, conv);
@@ -126,7 +126,7 @@ void A1339::burnZeroPosOffset(float deg)
     modifyRegister32(ANG_E, ~conv, conv);
 }
 
-void A1339::burnHysterisis(float deg)
+void A1339::burnHysteresis(float deg)
 {
     uint32_t conv = (deg*(4096/360)) & 0x0003F000;
     modifyRegister32(ANG_E, ~conv, conv);
