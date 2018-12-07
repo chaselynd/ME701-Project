@@ -56,61 +56,80 @@
 #define CMD_READ_16     (0x8000)
 #define CMD_WRITE_16    (0x0000)
 #define ADDR_MASK_16    (0x7FFF)
+#define CMD_READ_32     (0x80000000)
+#define CMD_WRITE_32    (0x00000000)
+#define ADDR_MASK_32    (0x7FFFFFFF)
 
 
-// Constants for setting bits in registers
-
-// Zero Position Set
-// Zero Position Reset
-
-// Pass the constants below as the clearbits or setbits arguments of the modifyRegister function
-#define DIR       (0x0004) // Rotation Direction: LOW=Clockwise HIGH=Counter-Clockwise
-#define DAECDIS   (0x0010) // Dynamic Angle Compensation: LOW=on HIGH=off
-
-
-A1339::A1339()
+A1339::A1339() :
+    spi_(NULL)
 {
-
 }
 
-void unlock()
+void A1339::unlock()
 {
-
+    // the follow sequence of writes unlocks EEPROM and Shadow Memory
+    setRegister(0x3C, 0x00);
+    setRegister(0x3C, 0x27);
+    setRegister(0x3C, 0x81);
+    setRegister(0x3C, 0x1F);
+    setRegister(0x3C, 0x77);
 }
 
-double getAngle()
+float A1339::getAngle()
 {
+    uint16_t value = readRegister(ANG);
+    float angle = (value & 0x0FFF)*(360/4096);
 
+    return angle;
 }
 
-void setRotDir(int dir)
+void A1339::setRotDir(int dir)
 {
-
+    if (dir <= 0) // angle increases in CW direction
+    {
+        modifyRegister32(ANG_S, 0x00040000, 0x00000000);
+    }
+    else
+    {
+        modifyRegister32(ANG_S, 0x00000000, 0x00040000);
+    }
 }
 
-void setZeroPosOffset(double rad)
+void A1339::setZeroPosOffset(float deg)
 {
-
+    uint32_t conv = (deg*(4096/360)) & 0x00000FFF;
+    modifyRegister32(ANG_S, ~conv, conv);
 }
 
-void setHysterisis(double deg)
+void A1339::setHysterisis(float deg)
 {
-
+    uint32_t conv = (deg*(4096/360)) & 0x0003F000;
+    modifyRegister32(ANG_S, ~conv, conv);
 }
 
-void burnRotDir(int dir)
+void A1339::burnRotDir(int dir)
 {
-
+    if (dir <= 0) // angle increases in CW direction
+    {
+        modifyRegister32(ANG_E, 0x00040000, 0x00000000);
+    }
+    else
+    {
+        modifyRegister32(ANG_E, 0x00000000, 0x00040000);
+    }
 }
 
-void burnZeroPosOffset(double rad)
+void A1339::burnZeroPosOffset(float deg)
 {
-
+    uint32_t conv = (deg*(4096/360)) & 0x00000FFF;
+    modifyRegister32(ANG_E, ~conv, conv);
 }
 
-void burnHysterisis(double deg)
+void A1339::burnHysterisis(float deg)
 {
-    
+    uint32_t conv = (deg*(4096/360)) & 0x0003F000;
+    modifyRegister32(ANG_E, ~conv, conv);
 }
 
 uint8_t A1339::readRegister(uint8_t address)
@@ -147,7 +166,7 @@ void A1339::modifyRegister(uint8_t address,  uint8_t clearbits, uint8_t setbits)
     setRegister(address, value);
 }
 
-uint16_t A1339::readRegister16(uint16_t address)
+uint16_t A1339::readRegister16(uint8_t address)
 {
     address &= ADDR_MASK_16;
 
@@ -161,7 +180,7 @@ uint16_t A1339::readRegister16(uint16_t address)
     return value;
 }
 
-void A1339::setRegister16(uint16_t address, uint16_t value)
+void A1339::setRegister16(uint8_t address, uint16_t value)
 {
     address &= ADDR_MASK_16;
 
@@ -173,7 +192,7 @@ void A1339::setRegister16(uint16_t address, uint16_t value)
     deselectChip();
 }
 
-void A1339::modifyRegister16(uint16_t address,  uint16_t clearbits, uint16_t setbits)
+void A1339::modifyRegister16(uint8_t address,  uint16_t clearbits, uint16_t setbits)
 {
     uint16_t value = readRegister(address);
     value &= ~clearbits;
@@ -181,25 +200,36 @@ void A1339::modifyRegister16(uint16_t address,  uint16_t clearbits, uint16_t set
     setRegister(address, value);
 }
 
-
-
-
-
-
-
-
-
-
-double A1339::getAngle()
+uint32_t A1339::readRegister32(uint8_t address)
 {
-    uint16_t value = readRegister(ANG15);
+    address &= ADDR_MASK_32;
 
+    selectChip();
+
+    spi_->sendWord(CMD_READ_32 | address);
+    uint32_t value = spi_->sendWord(0);
+
+    deselectChip();
+
+    return value;
 }
 
-void A1339::setZeroPosOffset()
+void A1339::setRegister32(uint8_t address, uint32_t value)
 {
-    uint16_t current_pos = readRegister(ANGLECOM); // Maybe this should be ANGLEUNC? I'm not sure.
-    setRegister(ZPOSM, (current_pos & 0x00FF))
-    setRegister(ZPOSL, (current_pos & 0x003F))
+    address &= ADDR_MASK_32;
+
+    selectChip();
+    usleep(1);
+    spi_->sendWord(CMD_WRITE_32 | address);
+    spi_->sendWord(value);
+    usleep(1);
+    deselectChip();
 }
 
+void A1339::modifyRegister32(uint8_t address,  uint32_t clearbits, uint32_t setbits)
+{
+    uint32_t value = readRegister(address);
+    value &= ~clearbits;
+    value |=  setbits;
+    setRegister(address, value);
+}
