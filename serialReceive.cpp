@@ -1,3 +1,9 @@
+#include <string>
+#include "A1339.h"
+
+// declare an instance of the A1339 class
+A1339 sensor;
+
 uint16_t parsed_object_id_;
 bool complete_object_parsed_;
 uint8_t object_rx_buffer_[255];
@@ -38,10 +44,25 @@ void serialReceive(uint8_t in_byte)
         if(bodyindex >= num_body_bytes) msgSectionIndex++;
         break;
     case 6:                                // decide what to do with the data
-        if (object_rx_buffer_[0] == 'A')
+        if (object_rx_buffer_[0] == 'U')
         {
-            string data_str
-            for (int i=1, i<bodyindex, ++i)
+            sensor.unlock();
+        }
+        else if (object_rx_buffer_[0] == ('A' || 'B' || 'C'))
+        {
+            std::string data_str;
+            std::string::size_type sz;
+            for (int i=1, i<=bodyindex, ++i)
+            {
+                data_str += object_rx_buffer_[i];
+            }
+            float data_flt = std::stof(data_str, &sz)
+            if (object_rx_buffer_[0] == 'A')
+            {
+                sensor.setHysteresis(data_flt)
+            }
+
+
         }
         bodyindex++;
         if(bodyindex >= num_body_bytes) msgSectionIndex++;

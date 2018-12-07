@@ -10,9 +10,13 @@ from PyQt5.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
 import platform
 import sys
 import serial
+import time
 
 # default serial configuration if no options are specified in the GUI
-ser = serial.Serial(COM1, baudrate = 9600, timeout = 1)
+ser = serial.Serial('COM4', baudrate = 9600, timeout = 1)
+
+# signal at the start of a serial transmission
+signal_str = '})]>'
 
 # the number system below corresponds to various settings in the GUI
 
@@ -37,13 +41,11 @@ class A1339_GUI(QMainWindow):
         # Set up "Initialize Serial Connection" button
         self.serialBtn = QPushButton('Press to initialize serial connection', self)
         self.serialBtn.clicked.connect(self.init_serial_con)
-        self.serialBtn.clicked.connect(self.make_btn_green)
         self.serialBtn.resize(self.serialBtn.sizeHint())
 
         # Set up "Unlock" button
-        self.unlockBtn = QPushButton('Press to unlock A1339 encoder', self)
+        self.unlockBtn = QPushButton('Press and wait a few seconds to unlock A1339 encoder', self)
         self.unlockBtn.clicked.connect(self.unlock_device)
-        self.unlockBtn.clicked.connect(self.make_btn_green)
         self.unlockBtn.resize(self.unlockBtn.sizeHint())
 
         # Set up "Rotation Direction" dropdown menu
@@ -70,11 +72,7 @@ class A1339_GUI(QMainWindow):
         # Set up "Write to Shadow Memory" button
         self.shadMemBtn = QPushButton('Write config settings to Shadow Memory', self)
         self.shadMemBtn.clicked.connect(self.write_to_shad_mem)
-        # The pop-up message below should probably be moved to be within the write_to_shad_mem function
-        # self.shadMemMessage = QMessageBox()
-        # self.shadMemMessage.setText("Configuration settings successfully written to Shadow Memory")
-        # self.shadMemBtn.clicked.connect(self.shadMemMessage.exec)
-        # self.shadMemBtn.resize(self.shadMemBtn.sizeHint())
+        self.shadMemBtn.resize(self.shadMemBtn.sizeHint())
 
         #Set up "Burn to EEPROM" button
         self.eepromBtn = QPushButton("Burn config settings to EEPROM", self)
@@ -130,55 +128,114 @@ class A1339_GUI(QMainWindow):
         COM_str = str(self.COMLineEdit.text())
         baud_int = int(self.baudLineEdit.text())
         ser = serial.Serial(COM_str, baudrate = baud_int, timeout = 1)
+        time.sleep(3)
+        self.serialMessage = QMessageBox()
+        self.serialMessage.setText("Serial connection set up was successful")
+        self.serialMessage.show()
 
     def unlock_device(self):
         """
         Unlocks the A1339 to enable writes to EEPROM and Shadow Memory.
         """
-        # write signal characters
-        ser.write(b'}')
-        ser.write(b')')
-        ser.write(b']')
-        ser.write(b'>')
+        ser.write(signal_str.encode())
+        time.sleep(3)
         
-    def make_btn_green(self):
+        transU = 'U'
+        lenU = len(transU)
+        ser.write(lenU.encode())
+        time.sleep(3)
+
+        ser.write(transU.encode())
+        time.sleep(3)
+
         self.unlockBtn.setStyleSheet("QPushButton { background-color: green }")
         self.unlockBtn.setText("A1339 encoder is now unlocked until power to the encoder is lost")
         self.unlockBtn.setEnabled(False)
 
-    def set_zero_pos_to_current(self):
-        """
-
-        """
-
     def write_to_shad_mem(self):
         """
-
+        Writes the configuration settings to the A1339 Shadow Memory registers.
         """
+        rotDir_str = str(self.rotDirDropDown.currentText())
+        zeroPos_str = str(self.zeroPosLineEdit.text())
+        hyst_str = str(self.hystLineEdit.text())
+
+        transA = 'A' + rotDir_str
+        transB = 'B' + zeroPos_str
+        transC = 'C' + hyst_str
+
+        ser.write(signal_str.encode())
+        time.sleep(3)
+        lenA = len(transA)
+        ser.write(lenA.encode())
+        time.sleep(3)
+        ser.write(transA.encode())
+        time.sleep(3)
+
+        ser.write(signal_str.encode())
+        time.sleep(3)
+        lenB = len(transB)
+        ser.write(lenB.encode())
+        time.sleep(3)
+        ser.write(transB.encode())
+        time.sleep(3)
+
+        ser.write(signal_str.encode())
+        time.sleep(3)
+        lenC = len(transC)
+        ser.write(lenC.encode())
+        time.sleep(3)
+        ser.write(transC.encode())
+        time.sleep(3)
+
         self.shadMemMessage = QMessageBox()
         self.shadMemMessage.setText("Configuration settings successfully written to Shadow Memory")
-        self.shadMemBtn.clicked.connect(self.shadMemMessage.exec)
-        self.shadMemBtn.resize(self.shadMemBtn.sizeHint())
-
-        x_str = str(self.xValues.text())
+        self.shadMemMessage.show()
 
     def burn_to_eeprom(self):
         """
-
+        Burns the configuration settings to the A1339 EEPROM registers.
         """
         self.choice = QMessageBox.warning(self, "WARNING!",
                                           "Are you sure you want to burn configuration settings to EEPROM?",
                                           QMessageBox.No | QMessageBox.Yes)
 
         if self.choice == QMessageBox.Yes:
-            print("Go for it")
             # Go ahead and burn to EEPROM
-            # NEED TO IMPLEMENT
+            rotDir_str = str(self.rotDirDropDown.currentText())
+            zeroPos_str = str(self.zeroPosLineEdit.text())
+            hyst_str = str(self.hystLineEdit.text())
+
+            transD = 'D' + rotDir_str
+            transE = 'E' + zeroPos_str
+            transF = 'F' + hyst_str
+
+            ser.write(signal_str.encode())
+            time.sleep(3)
+            lenD = len(transD)
+            ser.write(lenD.encode())
+            time.sleep(3)
+            ser.write(transD.encode())
+            time.sleep(3)
+
+            ser.write(signal_str.encode())
+            time.sleep(3)
+            lenE = len(transE)
+            ser.write(lenE.encode())
+            time.sleep(3)
+            ser.write(transE.encode())
+            time.sleep(3)
+
+            ser.write(signal_str.encode())
+            time.sleep(3)
+            lenF = len(transF)
+            ser.write(lenF.encode())
+            time.sleep(3)
+            ser.write(transF.encode())
+            time.sleep(3)
         else:
             pass
         
-
-
 
         
 app = QApplication(sys.argv)
