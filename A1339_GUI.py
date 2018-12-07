@@ -11,6 +11,12 @@ import platform
 import sys
 import serial
 
+# default serial configuration if no options are specified in the GUI
+ser = serial.Serial(COM1, baudrate = 9600, timeout = 1)
+
+# the number system below corresponds to various settings in the GUI
+
+
 class A1339_GUI(QMainWindow):
     
     def __init__(self):
@@ -28,6 +34,12 @@ class A1339_GUI(QMainWindow):
         self.unlockLabel1 = QLabel('<font size=3>The A1339 encoder must be unlocked before it possible to write to EEPROM or Shadow Memory.</font>')
         self.unlockLabel2 = QLabel('<font size=3>EEPROM and Shadow Memory are automatically re-locked when power to the encoder is lost.</font>')
         
+        # Set up "Initialize Serial Connection" button
+        self.serialBtn = QPushButton('Press to initialize serial connection', self)
+        self.serialBtn.clicked.connect(self.init_serial_con)
+        self.serialBtn.clicked.connect(self.make_btn_green)
+        self.serialBtn.resize(self.serialBtn.sizeHint())
+
         # Set up "Unlock" button
         self.unlockBtn = QPushButton('Press to unlock A1339 encoder', self)
         self.unlockBtn.clicked.connect(self.unlock_device)
@@ -52,17 +64,17 @@ class A1339_GUI(QMainWindow):
         self.COMLineEdit.setPlaceholderText("Enter COM1 or COM2 or COM3 or etc.")
 
         # Set up "Baud Rate" line edit
-        self.BaudLineEdit = QLineEdit()
-        self.BaudLineEdit.setPlaceholderText("Enter 9600 or 4800 or etc.")
+        self.baudLineEdit = QLineEdit()
+        self.baudLineEdit.setPlaceholderText("Enter 9600 or 4800 or etc.")
 
         # Set up "Write to Shadow Memory" button
         self.shadMemBtn = QPushButton('Write config settings to Shadow Memory', self)
         self.shadMemBtn.clicked.connect(self.write_to_shad_mem)
         # The pop-up message below should probably be moved to be within the write_to_shad_mem function
-        self.shadMemMessage = QMessageBox()
-        self.shadMemMessage.setText("Configuration settings successfully written to Shadow Memory")
-        self.shadMemBtn.clicked.connect(self.shadMemMessage.exec)
-        self.shadMemBtn.resize(self.shadMemBtn.sizeHint())
+        # self.shadMemMessage = QMessageBox()
+        # self.shadMemMessage.setText("Configuration settings successfully written to Shadow Memory")
+        # self.shadMemBtn.clicked.connect(self.shadMemMessage.exec)
+        # self.shadMemBtn.resize(self.shadMemBtn.sizeHint())
 
         #Set up "Burn to EEPROM" button
         self.eepromBtn = QPushButton("Burn config settings to EEPROM", self)
@@ -87,37 +99,52 @@ class A1339_GUI(QMainWindow):
 
         # Set up "Serial Options" Group Box
         self.serialBox = QGroupBox("Serial Options")
-        self.serialLayout = QFormLayout()
-        self.serialLayout.addRow("COM Port:", self.COMLineEdit)
-        self.serialLayout.addRow("Baud Rate:", self.BaudLineEdit)
+        self.serialLayout = QVBoxLayout()
+        self.serialFormLayout = QFormLayout()
+        self.serialFormLayout.addRow("COM Port:", self.COMLineEdit)
+        self.serialFormLayout.addRow("Baud Rate:", self.baudLineEdit)
+        self.serialLayout.addLayout(self.serialFormLayout)
+        self.serialLayout.addWidget(self.serialBtn)
         self.serialBox.setLayout(self.serialLayout)
         
         # Set up the main GUI layout
         mainLayout = QVBoxLayout()
+        mainLayout.addWidget(self.serialBox)
         mainLayout.addWidget(self.unlockBox)
         mainLayout.addWidget(self.configBox)
-        mainLayout.addWidget(self.serialBox)
 
-        burnButtonsLayout = QHBoxLayout()
-        burnButtonsLayout.addWidget(self.shadMemBtn)
-        burnButtonsLayout.addWidget(self.eepromBtn)
+        buttonsLayout = QHBoxLayout()
+        buttonsLayout.addWidget(self.shadMemBtn)
+        buttonsLayout.addWidget(self.eepromBtn)
 
-        mainLayout.addLayout(burnButtonsLayout)
+        mainLayout.addLayout(buttonsLayout)
         
         widget.setLayout(mainLayout)
         
         self.setCentralWidget(widget)
     
+    def init_serial_con(self):
+        """
+        Sets up the serial connection with the specified COM port and baud rate.
+        """
+        COM_str = str(self.COMLineEdit.text())
+        baud_int = int(self.baudLineEdit.text())
+        ser = serial.Serial(COM_str, baudrate = baud_int, timeout = 1)
+
     def unlock_device(self):
         """
         Unlocks the A1339 to enable writes to EEPROM and Shadow Memory.
         """
+        # write signal characters
+        ser.write(b'}')
+        ser.write(b')')
+        ser.write(b']')
+        ser.write(b'>')
         
     def make_btn_green(self):
         self.unlockBtn.setStyleSheet("QPushButton { background-color: green }")
         self.unlockBtn.setText("A1339 encoder is now unlocked until power to the encoder is lost")
         self.unlockBtn.setEnabled(False)
-        pass
 
     def set_zero_pos_to_current(self):
         """
@@ -128,6 +155,12 @@ class A1339_GUI(QMainWindow):
         """
 
         """
+        self.shadMemMessage = QMessageBox()
+        self.shadMemMessage.setText("Configuration settings successfully written to Shadow Memory")
+        self.shadMemBtn.clicked.connect(self.shadMemMessage.exec)
+        self.shadMemBtn.resize(self.shadMemBtn.sizeHint())
+
+        x_str = str(self.xValues.text())
 
     def burn_to_eeprom(self):
         """

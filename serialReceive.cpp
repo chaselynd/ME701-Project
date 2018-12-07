@@ -27,17 +27,22 @@ void serialReceive(uint8_t in_byte)
         if (in_byte==msg_frame[3]) {msgSectionIndex++; bodyindex=0;}
         else {msgSectionIndex = -1; bodyindex=0;}
         break;
-    case 4:                                 // pulling out id
-        objID = in_byte;
-        msgSectionIndex++;
-        break;
     case 5:                                 // pulling out length of data
-        num_body_bytes = in_byte;
+        num_body_bytes = in_byte; // convert to float or int?
         msgSectionIndex++;
         if(num_body_bytes>255){msgSectionIndex = -1; bodyindex=0;} // never true with num_body_bytes as uint8
         break;
     case 6:                                // pulling out body
         object_rx_buffer_[bodyindex] = in_byte;
+        bodyindex++;
+        if(bodyindex >= num_body_bytes) msgSectionIndex++;
+        break;
+    case 6:                                // decide what to do with the data
+        if (object_rx_buffer_[0] == 'A')
+        {
+            string data_str
+            for (int i=1, i<bodyindex, ++i)
+        }
         bodyindex++;
         if(bodyindex >= num_body_bytes) msgSectionIndex++;
         break;
