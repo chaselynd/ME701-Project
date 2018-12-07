@@ -13,7 +13,7 @@ import serial
 import time
 
 # default serial configuration if no options are specified in the GUI
-ser = serial.Serial('COM4', baudrate = 9600, timeout = 1)
+# ser = serial.Serial('COM4', baudrate = 9600, timeout = 1)
 
 # signal at the start of a serial transmission
 signal_str = '})]>'
@@ -124,8 +124,8 @@ class A1339_GUI(QMainWindow):
         """
         COM_str = str(self.COMLineEdit.text())
         baud_int = int(self.baudLineEdit.text())
-        ser = serial.Serial(COM_str, baudrate = baud_int, timeout = 1)
-        time.sleep(3)
+        # ser = serial.Serial(COM_str, baudrate = baud_int, timeout = 1)
+        # time.sleep(3)
         self.serialMessage = QMessageBox()
         self.serialMessage.setText("Serial connection set up was successful")
         self.serialMessage.show()
@@ -134,16 +134,16 @@ class A1339_GUI(QMainWindow):
         """
         Unlocks the A1339 to enable writes to EEPROM and Shadow Memory.
         """
-        ser.write(signal_str.encode())
-        time.sleep(3)
+        # ser.write(signal_str.encode())
+        # time.sleep(3)
         
         transU = 'U'
         lenU = len(transU)
-        ser.write(lenU.encode())
-        time.sleep(3)
+        # ser.write(lenU.encode())
+        # time.sleep(3)
 
-        ser.write(transU.encode())
-        time.sleep(3)
+        # ser.write(transU.encode())
+        # time.sleep(3)
 
         self.unlockBtn.setStyleSheet("QPushButton { background-color: green }")
         self.unlockBtn.setText("A1339 encoder is now unlocked until power to the encoder is lost")
@@ -161,29 +161,29 @@ class A1339_GUI(QMainWindow):
         transB = 'B' + zeroPos_str
         transC = 'C' + hyst_str
 
-        ser.write(signal_str.encode())
-        time.sleep(3)
+        # ser.write(signal_str.encode())
+        # time.sleep(3)
         lenA = len(transA)
-        ser.write(lenA.encode())
-        time.sleep(3)
-        ser.write(transA.encode())
-        time.sleep(3)
+        # ser.write(lenA.encode())
+        # time.sleep(3)
+        # ser.write(transA.encode())
+        # time.sleep(3)
 
-        ser.write(signal_str.encode())
-        time.sleep(3)
+        # ser.write(signal_str.encode())
+        # time.sleep(3)
         lenB = len(transB)
-        ser.write(lenB.encode())
-        time.sleep(3)
-        ser.write(transB.encode())
-        time.sleep(3)
+        # ser.write(lenB.encode())
+        # time.sleep(3)
+        # ser.write(transB.encode())
+        # time.sleep(3)
 
-        ser.write(signal_str.encode())
-        time.sleep(3)
+        # ser.write(signal_str.encode())
+        # time.sleep(3)
         lenC = len(transC)
-        ser.write(lenC.encode())
-        time.sleep(3)
-        ser.write(transC.encode())
-        time.sleep(3)
+        # ser.write(lenC.encode())
+        # time.sleep(3)
+        # ser.write(transC.encode())
+        # time.sleep(3)
 
         self.shadMemMessage = QMessageBox()
         self.shadMemMessage.setText("Configuration settings successfully written to Shadow Memory")
@@ -207,29 +207,29 @@ class A1339_GUI(QMainWindow):
             transE = 'E' + zeroPos_str
             transF = 'F' + hyst_str
 
-            ser.write(signal_str.encode())
-            time.sleep(3)
+            # ser.write(signal_str.encode())
+            # time.sleep(3)
             lenD = len(transD)
-            ser.write(lenD.encode())
-            time.sleep(3)
-            ser.write(transD.encode())
-            time.sleep(3)
+            # ser.write(lenD.encode())
+            # time.sleep(3)
+            # ser.write(transD.encode())
+            # time.sleep(3)
 
-            ser.write(signal_str.encode())
-            time.sleep(3)
+            # ser.write(signal_str.encode())
+            # time.sleep(3)
             lenE = len(transE)
-            ser.write(lenE.encode())
-            time.sleep(3)
-            ser.write(transE.encode())
-            time.sleep(3)
+            # ser.write(lenE.encode())
+            # time.sleep(3)
+            # ser.write(transE.encode())
+            # time.sleep(3)
 
-            ser.write(signal_str.encode())
-            time.sleep(3)
+            # ser.write(signal_str.encode())
+            # time.sleep(3)
             lenF = len(transF)
-            ser.write(lenF.encode())
-            time.sleep(3)
-            ser.write(transF.encode())
-            time.sleep(3)
+            # ser.write(lenF.encode())
+            # time.sleep(3)
+            # ser.write(transF.encode())
+            # time.sleep(3)
         else:
             pass
         
