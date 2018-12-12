@@ -135,12 +135,12 @@ class A1339_GUI(QMainWindow):
         """
         # set up pop-up message for invalid (empty) serial settings
         self.serialInvalidMessage = QMessageBox()
-        self.serialInvalidMessage.setText("Please enter valid settings for the COM port and baud rate")
+        self.serialInvalidMessage.setText("Please enter settings for the COM port and baud rate")
 
         # make sure the user has specified serial communication parameters
-        if str(self.COMLineEdit.text()) == ("" or "Enter COM1 or COM2 or COM3 or etc."):
+        if str(self.COMLineEdit.text()) == "":
             self.serialInvalidMessage.show()
-        elif str(self.baudLineEdit.text()) == ("" or "Enter 9600 or 4800 or etc."):
+        elif str(self.baudLineEdit.text()) == "":
             self.serialInvalidMessage.show()
         else:
             # proceed with serial communication setup
@@ -186,16 +186,28 @@ class A1339_GUI(QMainWindow):
         """
         Writes the configuration settings to the A1339 Shadow Memory registers.
         """
+        # set up pop-up messages for invalid Zero Position Offset or Hysteresis
+        self.zeroPosInvalidMessage = QMessageBox()
+        self.zeroPosInvalidMessage.setText("Please enter a value for Zero Position Offset between 0 and 360")
+        self.hystInvalidMessage = QMessageBox()
+        self.hystInvalidMessage.setText("Please enter a value for Hysteresis between 0 and 1.384")
+        self.emptyMessage = QMessageBox()
+        self.emptyMessage.setText("Please enter a value for Zero Position Offset and Hysteresis")
+
+        # make sure the user has specified a Zero Position Offset
+        if str(self.zeroPosLineEdit.text()) == "":
+            self.emptyMessage.show()
+
+        # make sure the user has specified a Hysteresis
+        elif str(self.hystLineEdit.text()) == "":
+            self.emptyMessage.show()
+
         # make sure Zero Position Offset is set between 0 and 360
-        if (float(self.zeroPosLineEdit.text()) < 0) or (float(self.zeroPosLineEdit.text()) > 360):
-            self.zeroPosInvalidMessage = QMessageBox()
-            self.zeroPosInvalidMessage.setText("Please enter a value for Zero Position Offset between 0 and 360")
+        elif (float(self.zeroPosLineEdit.text()) < 0) or (float(self.zeroPosLineEdit.text()) > 360):
             self.zeroPosInvalidMessage.show()
 
         # make sure Hysteresis is set between 0 and 1.384
         elif (float(self.hystLineEdit.text()) < 0) or (float(self.hystLineEdit.text()) > 1.384):
-            self.hystInvalidMessage = QMessageBox()
-            self.hystInvalidMessage.setText("Please enter a value for Hysteresis between 0 and 1.384")
             self.hystInvalidMessage.show()
 
         # proceed with writing to Shadow Memory
@@ -253,16 +265,28 @@ class A1339_GUI(QMainWindow):
         """
         Burns the configuration settings to the A1339 EEPROM registers.
         """
+        # set up pop-up messages for invalid Zero Position Offset or Hysteresis
+        self.zeroPosInvalidMessage = QMessageBox()
+        self.zeroPosInvalidMessage.setText("Please enter a value for Zero Position Offset between 0 and 360")
+        self.hystInvalidMessage = QMessageBox()
+        self.hystInvalidMessage.setText("Please enter a value for Hysteresis between 0 and 1.384")
+        self.emptyMessage = QMessageBox()
+        self.emptyMessage.setText("Please enter a value for Zero Position Offset and Hysteresis")
+
+        # make sure the user has specified a Zero Position Offset
+        if str(self.zeroPosLineEdit.text()) == "":
+            self.emptyMessage.show()
+
+        # make sure the user has specified a Hysteresis
+        elif str(self.hystLineEdit.text()) == "":
+            self.emptyMessage.show()
+
         # make sure Zero Position Offset is set between 0 and 360
-        if (float(self.zeroPosLineEdit.text()) < 0) or (float(self.zeroPosLineEdit.text()) > 360):
-            self.zeroPosInvalidMessage = QMessageBox()
-            self.zeroPosInvalidMessage.setText("Please enter a value for Zero Position Offset between 0 and 360")
+        elif (float(self.zeroPosLineEdit.text()) < 0) or (float(self.zeroPosLineEdit.text()) > 360):
             self.zeroPosInvalidMessage.show()
 
         # make sure Hysteresis is set between 0 and 1.384
         elif (float(self.hystLineEdit.text()) < 0) or (float(self.hystLineEdit.text()) > 1.384):
-            self.hystInvalidMessage = QMessageBox()
-            self.hystInvalidMessage.setText("Please enter a value for Hysteresis between 0 and 1.384")
             self.hystInvalidMessage.show()
 
         # proceed with writing to EEPROM
