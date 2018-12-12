@@ -13,7 +13,7 @@ import serial
 import time
 
 # default serial configuration if no options are specified in the GUI
-ser = serial.Serial('COM4', baudrate = 9600, timeout = 1)
+ser = serial.Serial('COM1', baudrate = 9600, timeout = 1)
 
 # signal at the start of a serial transmission
 signal_str = '})]>'
@@ -32,7 +32,7 @@ class A1339_GUI(QMainWindow):
         widget = QDialog()
         
         # Set up message at the top of the GUI
-        self.unlockLabel1 = QLabel('<font size=3>The A1339 encoder must be unlocked before it possible to write to EEPROM or Shadow Memory.</font>')
+        self.unlockLabel1 = QLabel('<font size=3>The A1339 encoder must be unlocked before it is possible to write to EEPROM or Shadow Memory.</font>')
         self.unlockLabel2 = QLabel('<font size=3>EEPROM and Shadow Memory are automatically re-locked when power to the encoder is lost.</font>')
         
         # Set up "Initialize Serial Connection" button
@@ -121,14 +121,30 @@ class A1339_GUI(QMainWindow):
     def init_serial_con(self):
         """
         Sets up the serial connection with the specified COM port and baud rate.
+        This function is called if the user clicks the 'Press to initialize serial connection' button.
+        If the 'Press to initialize serial connection' is never clicked, this program will try to use
+        the default serial settings (COM Port = COM1 and Baud Rate = 9600). However, it is not likely
+        the default serial settings will work.
         """
-        COM_str = str(self.COMLineEdit.text())
-        baud_int = int(self.baudLineEdit.text())
-        ser = serial.Serial(COM_str, baudrate = baud_int, timeout = 1)
-        time.sleep(3)
-        self.serialMessage = QMessageBox()
-        self.serialMessage.setText("Serial connection set up was successful")
-        self.serialMessage.show()
+        # set up pop-up message for invalid (empty) serial settings
+        self.serialInvalidMessage = QMessageBox()
+        self.serialInvalidMessage.setText("Please enter valid settings for the COM port and baud rate")
+
+        # make sure the user has specified serial communication parameters
+        if str(self.COMLineEdit.text()) == ("" or "Enter COM1 or COM2 or COM3 or etc."):
+            self.serialInvalidMessage.show()
+        elif str(self.baudLineEdit.text()) == ("" or "Enter 9600 or 4800 or etc."):
+            self.serialInvalidMessage.show()
+        else:
+            # proceed with serial communication setup
+            COM_str = str(self.COMLineEdit.text())
+            baud_int = int(self.baudLineEdit.text())
+            ser = serial.Serial(COM_str, baudrate = baud_int, timeout = 1)
+
+            # set up and show pop-up message for successful serial communication setup
+            self.serialMessage = QMessageBox()
+            self.serialMessage.setText("Serial connection set up was successful")
+            self.serialMessage.show()
 
     def unlock_device(self):
         """
@@ -153,41 +169,65 @@ class A1339_GUI(QMainWindow):
         """
         Writes the configuration settings to the A1339 Shadow Memory registers.
         """
-        rotDir_str = str(self.rotDirDropDown.currentText())
-        zeroPos_str = str(self.zeroPosLineEdit.text())
-        hyst_str = str(self.hystLineEdit.text())
+        # make sure Zero Position Offset is set between 0 and 360
+        if (float(self.zeroPosLineEdit.text()) < 0) or (float(self.zeroPosLineEdit.text()) > 360):
+            self.zeroPosInvalidMessage = QMessageBox()
+            self.zeroPosInvalidMessage.setText("Please enter a value for Zero Position Offset between 0 and 360")
+            self.zeroPosInvalidMessage.show()
 
-        transA = 'A' + rotDir_str
-        transB = 'B' + zeroPos_str
-        transC = 'C' + hyst_str
+        # make sure Hysteresis is set between 0 and 1.384
+        elif (float(self.hystLineEdit.text()) < 0) or (float(self.hystLineEdit.text()) > 1.384):
+            self.hystInvalidMessage = QMessageBox()
+            self.hystInvalidMessage.setText("Please enter a value for Hysteresis between 0 and 1.384")
+            self.hystInvalidMessage.show()
 
-        ser.write(signal_str.encode())
-        time.sleep(3)
-        lenA = len(transA)
-        ser.write(lenA.encode())
-        time.sleep(3)
-        ser.write(transA.encode())
-        time.sleep(3)
+        # proceed with writing to Shadow Memory
+        else:
 
-        ser.write(signal_str.encode())
-        time.sleep(3)
-        lenB = len(transB)
-        ser.write(lenB.encode())
-        time.sleep(3)
-        ser.write(transB.encode())
-        time.sleep(3)
+            # get the information from the text boxes
+            rotDir_str = str(self.rotDirDropDown.currentText())
+            zeroPos_str = str(self.zeroPosLineEdit.text())
+            hyst_str = str(self.hystLineEdit.text())
 
-        ser.write(signal_str.encode())
-        time.sleep(3)
-        lenC = len(transC)
-        ser.write(lenC.encode())
-        time.sleep(3)
-        ser.write(transC.encode())
-        time.sleep(3)
+            # set up the transmissions (messages) that will be sent using serial communication.
+            # the letters at the beginning are 'code letters' that the program receiving the
+            # the serial communication will use to determine what action to take
+            transA = 'A' + rotDir_str
+            transB = 'B' + zeroPos_str
+            transC = 'C' + hyst_str
 
-        self.shadMemMessage = QMessageBox()
-        self.shadMemMessage.setText("Configuration settings successfully written to Shadow Memory")
-        self.shadMemMessage.show()
+            # send the transmissions using serial communication.
+            # the time.sleep(3) function pauses the code execution for 3 seconds.
+            # the pauses ensure that the transmission has been completely sent, received, and handled
+            # by the receiving program.
+            ser.write(signal_str.encode())
+            time.sleep(3)
+            lenA = len(transA)
+            ser.write(lenA.encode())
+            time.sleep(3)
+            ser.write(transA.encode())
+            time.sleep(3)
+
+            ser.write(signal_str.encode())
+            time.sleep(3)
+            lenB = len(transB)
+            ser.write(lenB.encode())
+            time.sleep(3)
+            ser.write(transB.encode())
+            time.sleep(3)
+
+            ser.write(signal_str.encode())
+            time.sleep(3)
+            lenC = len(transC)
+            ser.write(lenC.encode())
+            time.sleep(3)
+            ser.write(transC.encode())
+            time.sleep(3)
+
+            # set up and show pop-up message for successful write to Shadow Memory
+            self.shadMemMessage = QMessageBox()
+            self.shadMemMessage.setText("Configuration settings successfully written to Shadow Memory")
+            self.shadMemMessage.show()
 
     def burn_to_eeprom(self):
         """
