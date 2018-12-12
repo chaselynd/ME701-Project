@@ -2,6 +2,10 @@
 # Class: ME 701
 # Assignment: End-Of-Semester Project
 
+# --------------------------------------------------
+# GUI for setting up an Allegro A1339 angle sensor
+# --------------------------------------------------
+
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QLineEdit, QDialog, 
                              QVBoxLayout, QHBoxLayout, QAction, QMessageBox,
                              QFileDialog, QComboBox, QPushButton, QSizePolicy,
@@ -12,7 +16,7 @@ import sys
 import serial
 import time
 
-# default serial configuration if no options are specified in the GUI
+# this program will attempt to use the following default serial configuration if no options are specified in the GUI
 ser = serial.Serial('COM1', baudrate = 9600, timeout = 1)
 
 # signal at the start of a serial transmission
@@ -22,6 +26,10 @@ class A1339_GUI(QMainWindow):
     
     def __init__(self):
         QMainWindow.__init__(self)
+
+        # NOTE: The QLabels, QLineEdits, GPushButtons, etc. are organized in this code in
+        #       the same order that they appear in the GUI going from top to bottom. The
+        #       QGroupBoxes and QLayouts come next, followed up by the function definitions.
         
         # Create the File menu
         self.menuFile = self.menuBar().addMenu("&File")
@@ -32,8 +40,8 @@ class A1339_GUI(QMainWindow):
         widget = QDialog()
         
         # Set up message at the top of the GUI
-        self.unlockLabel1 = QLabel('<font size=3>The A1339 encoder must be unlocked before it is possible to write to EEPROM or Shadow Memory.</font>')
-        self.unlockLabel2 = QLabel('<font size=3>EEPROM and Shadow Memory are automatically re-locked when power to the encoder is lost.</font>')
+        self.unlockLabel1 = QLabel('<font size=3>The A1339 sensor must be unlocked before it is possible to write to EEPROM or Shadow Memory.</font>')
+        self.unlockLabel2 = QLabel('<font size=3>EEPROM and Shadow Memory are automatically re-locked when power to the sensor is lost.</font>')
         
         # Set up "Initialize Serial Connection" button
         self.serialBtn = QPushButton('Press to initialize serial connection', self)
@@ -41,7 +49,7 @@ class A1339_GUI(QMainWindow):
         self.serialBtn.resize(self.serialBtn.sizeHint())
 
         # Set up "Unlock" button
-        self.unlockBtn = QPushButton('Press and wait a few seconds to unlock A1339 encoder', self)
+        self.unlockBtn = QPushButton('Press and wait a few seconds to unlock A1339 sensor', self)
         self.unlockBtn.clicked.connect(self.unlock_device)
         self.unlockBtn.resize(self.unlockBtn.sizeHint())
 
@@ -190,8 +198,8 @@ class A1339_GUI(QMainWindow):
             hyst_str = str(self.hystLineEdit.text())
 
             # set up the transmissions (messages) that will be sent using serial communication.
-            # the letters at the beginning are 'code letters' that the program receiving the
-            # the serial communication will use to determine what action to take
+            # the letters (A, B, & C) at the beginning are 'code letters' that the program receiving the
+            # the serial communication will use to determine what action to take.
             transA = 'A' + rotDir_str
             transB = 'B' + zeroPos_str
             transC = 'C' + hyst_str
@@ -233,48 +241,77 @@ class A1339_GUI(QMainWindow):
         """
         Burns the configuration settings to the A1339 EEPROM registers.
         """
-        self.choice = QMessageBox.warning(self, "WARNING!",
-                                          "Are you sure you want to burn configuration settings to EEPROM?",
-                                          QMessageBox.No | QMessageBox.Yes)
+        # make sure Zero Position Offset is set between 0 and 360
+        if (float(self.zeroPosLineEdit.text()) < 0) or (float(self.zeroPosLineEdit.text()) > 360):
+            self.zeroPosInvalidMessage = QMessageBox()
+            self.zeroPosInvalidMessage.setText("Please enter a value for Zero Position Offset between 0 and 360")
+            self.zeroPosInvalidMessage.show()
 
-        if self.choice == QMessageBox.Yes:
-            # Go ahead and burn to EEPROM
-            rotDir_str = str(self.rotDirDropDown.currentText())
-            zeroPos_str = str(self.zeroPosLineEdit.text())
-            hyst_str = str(self.hystLineEdit.text())
+        # make sure Hysteresis is set between 0 and 1.384
+        elif (float(self.hystLineEdit.text()) < 0) or (float(self.hystLineEdit.text()) > 1.384):
+            self.hystInvalidMessage = QMessageBox()
+            self.hystInvalidMessage.setText("Please enter a value for Hysteresis between 0 and 1.384")
+            self.hystInvalidMessage.show()
 
-            transD = 'D' + rotDir_str
-            transE = 'E' + zeroPos_str
-            transF = 'F' + hyst_str
-
-            ser.write(signal_str.encode())
-            time.sleep(3)
-            lenD = len(transD)
-            ser.write(lenD.encode())
-            time.sleep(3)
-            ser.write(transD.encode())
-            time.sleep(3)
-
-            ser.write(signal_str.encode())
-            time.sleep(3)
-            lenE = len(transE)
-            ser.write(lenE.encode())
-            time.sleep(3)
-            ser.write(transE.encode())
-            time.sleep(3)
-
-            ser.write(signal_str.encode())
-            time.sleep(3)
-            lenF = len(transF)
-            ser.write(lenF.encode())
-            time.sleep(3)
-            ser.write(transF.encode())
-            time.sleep(3)
+        # proceed with writing to EEPROM
         else:
-            pass
-        
+            # double check that the user wants to burn settings to EEPROM
+            self.choice = QMessageBox.warning(self, "WARNING!",
+                                            "Are you sure you want to burn configuration settings to EEPROM?",
+                                            QMessageBox.No | QMessageBox.Yes)
+            
+            if self.choice == QMessageBox.Yes:
+                # go ahead and burn to EEPROM
 
+                # get the information from the text boxes
+                rotDir_str = str(self.rotDirDropDown.currentText())
+                zeroPos_str = str(self.zeroPosLineEdit.text())
+                hyst_str = str(self.hystLineEdit.text())
+
+                # set up the transmissions (messages) that will be sent using serial communication.
+                # the letters (D, E, & F) at the beginning are 'code letters' that the program receiving the
+                # the serial communication will use to determine what action to take.
+                transD = 'D' + rotDir_str
+                transE = 'E' + zeroPos_str
+                transF = 'F' + hyst_str
+
+                # send the transmissions using serial communication.
+                # the time.sleep(3) function pauses the code execution for 3 seconds.
+                # the pauses ensure that the transmission has been completely sent, received, and handled
+                # by the receiving program.
+                ser.write(signal_str.encode())
+                time.sleep(3)
+                lenD = len(transD)
+                ser.write(lenD.encode())
+                time.sleep(3)
+                ser.write(transD.encode())
+                time.sleep(3)
+
+                ser.write(signal_str.encode())
+                time.sleep(3)
+                lenE = len(transE)
+                ser.write(lenE.encode())
+                time.sleep(3)
+                ser.write(transE.encode())
+                time.sleep(3)
+
+                ser.write(signal_str.encode())
+                time.sleep(3)
+                lenF = len(transF)
+                ser.write(lenF.encode())
+                time.sleep(3)
+                ser.write(transF.encode())
+                time.sleep(3)
+
+                # set up and show pop-up message for successful write to Shadow Memory
+                self.eepromMessage = QMessageBox()
+                self.eepromMessage.setText("Configuration settings successfully written to EEPROM")
+                self.eepromMessage.show()
+            else:
+                # user elected NOT to burn to EEPROM, so do nothing
+                pass
         
+# final lines necessary to utilize the A1339_GUI class above
 app = QApplication(sys.argv)
 widget = A1339_GUI()
 widget.show()
