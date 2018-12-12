@@ -1,5 +1,20 @@
+// Name: Chase Lynd
+// Class: ME 701
+// Assignment: End-of-Semester Project
+
+// -------------------------------------------------
+// This file contains the serialReceive() function
+// that is used for receiving and processing data
+// from the A1339 GUI. The serialReceive() function
+// is a modified and simplified version of the
+// parseOneByte() function in GloLink.cpp (line 77)
+// from Dr. Schinstock.
+// -------------------------------------------------
+
 #include <string>
 #include "A1339.h"
+
+using std::stof;
 
 // declare an instance of the A1339 class
 A1339 sensor;
