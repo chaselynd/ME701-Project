@@ -36,18 +36,24 @@ class A1339_GUI(QMainWindow):
         self.actionQuit = QAction("&Quit", self)
         self.actionQuit.triggered.connect(self.close)
         self.menuFile.addActions([self.actionQuit])
-        
-        widget = QDialog()
-        
-        # Set up message at the top of the GUI
-        self.unlockLabel1 = QLabel('<font size=3>The A1339 sensor must be unlocked before it is possible to write to EEPROM or Shadow Memory.</font>')
-        self.unlockLabel2 = QLabel('<font size=3>EEPROM and Shadow Memory are automatically re-locked when power to the sensor is lost.</font>')
+
+        # Set up "COM Port" line edit
+        self.COMLineEdit = QLineEdit()
+        self.COMLineEdit.setPlaceholderText("Enter COM1 or COM2 or COM3 or etc.")
+
+        # Set up "Baud Rate" line edit
+        self.baudLineEdit = QLineEdit()
+        self.baudLineEdit.setPlaceholderText("Enter 9600 or 4800 or etc.")
         
         # Set up "Initialize Serial Connection" button
         self.serialBtn = QPushButton('Press to initialize serial connection', self)
         self.serialBtn.clicked.connect(self.init_serial_con)
         self.serialBtn.resize(self.serialBtn.sizeHint())
-
+        
+        # Set up message at the top of the "Device Unlock" Group Box
+        self.unlockLabel1 = QLabel('<font size=3>The A1339 sensor must be unlocked before it is possible to write to EEPROM or Shadow Memory.</font>')
+        self.unlockLabel2 = QLabel('<font size=3>EEPROM and Shadow Memory are automatically re-locked when power to the sensor is lost.</font>')
+        
         # Set up "Unlock" button
         self.unlockBtn = QPushButton('Press and wait a few seconds to unlock A1339 sensor', self)
         self.unlockBtn.clicked.connect(self.unlock_device)
@@ -66,14 +72,6 @@ class A1339_GUI(QMainWindow):
         self.hystLineEdit = QLineEdit()
         self.hystLineEdit.setPlaceholderText("Enter value from 0 to 1.384 (in degrees)")
 
-        # Set up "COM Port" line edit
-        self.COMLineEdit = QLineEdit()
-        self.COMLineEdit.setPlaceholderText("Enter COM1 or COM2 or COM3 or etc.")
-
-        # Set up "Baud Rate" line edit
-        self.baudLineEdit = QLineEdit()
-        self.baudLineEdit.setPlaceholderText("Enter 9600 or 4800 or etc.")
-
         # Set up "Write to Shadow Memory" button
         self.shadMemBtn = QPushButton('Write config settings to Shadow Memory', self)
         self.shadMemBtn.clicked.connect(self.write_to_shad_mem)
@@ -83,6 +81,16 @@ class A1339_GUI(QMainWindow):
         self.eepromBtn = QPushButton("Burn config settings to EEPROM", self)
         self.eepromBtn.clicked.connect(self.burn_to_eeprom)
         self.eepromBtn.resize(self.eepromBtn.sizeHint())
+
+        # Set up "Serial Options" Group Box
+        self.serialBox = QGroupBox("Serial Options")
+        self.serialLayout = QVBoxLayout()
+        self.serialFormLayout = QFormLayout()
+        self.serialFormLayout.addRow("COM Port:", self.COMLineEdit)
+        self.serialFormLayout.addRow("Baud Rate:", self.baudLineEdit)
+        self.serialLayout.addLayout(self.serialFormLayout)
+        self.serialLayout.addWidget(self.serialBtn)
+        self.serialBox.setLayout(self.serialLayout)
 
         # Set up "Device Unlock" Group Box
         self.unlockBox = QGroupBox("Device Unlock")
@@ -99,31 +107,22 @@ class A1339_GUI(QMainWindow):
         self.configLayout.addRow("Zero Position Offset:", self.zeroPosLineEdit)
         self.configLayout.addRow("Hysteresis:", self.hystLineEdit)
         self.configBox.setLayout(self.configLayout)
-
-        # Set up "Serial Options" Group Box
-        self.serialBox = QGroupBox("Serial Options")
-        self.serialLayout = QVBoxLayout()
-        self.serialFormLayout = QFormLayout()
-        self.serialFormLayout.addRow("COM Port:", self.COMLineEdit)
-        self.serialFormLayout.addRow("Baud Rate:", self.baudLineEdit)
-        self.serialLayout.addLayout(self.serialFormLayout)
-        self.serialLayout.addWidget(self.serialBtn)
-        self.serialBox.setLayout(self.serialLayout)
         
+        # Set up "buttonsLayout" to make the Shadow Memory and EEPROM buttons side-by-side
+        buttonsLayout = QHBoxLayout()
+        buttonsLayout.addWidget(self.shadMemBtn)
+        buttonsLayout.addWidget(self.eepromBtn)
+
         # Set up the main GUI layout
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.serialBox)
         mainLayout.addWidget(self.unlockBox)
         mainLayout.addWidget(self.configBox)
-
-        buttonsLayout = QHBoxLayout()
-        buttonsLayout.addWidget(self.shadMemBtn)
-        buttonsLayout.addWidget(self.eepromBtn)
-
         mainLayout.addLayout(buttonsLayout)
-        
+
+        # Set up the main GUI widget
+        widget = QDialog()
         widget.setLayout(mainLayout)
-        
         self.setCentralWidget(widget)
     
     def init_serial_con(self):
@@ -158,19 +157,29 @@ class A1339_GUI(QMainWindow):
         """
         Unlocks the A1339 to enable writes to EEPROM and Shadow Memory.
         """
+        # set up the transmission (message) that will be sent using serial communication.
+        # the letter (U) is a 'code letter' that the program receiving the
+        # the serial communication will use to determine what action to take.
+        transU = 'U'
+
+        # send the transmission using serial communication.
+        # the time.sleep(3) function pauses the code execution for 3 seconds.
+        # the pauses ensure that the transmission has been completely sent, received, and handled
+        # by the receiving program. the signal_str is sent before each configuration option
+        # transmission. the signal_str is received and handled by the receiving program.
+        # the total length of the transmission (not including the signal_str) is always sent
+        # before the actual transmission, as the length is required by the receiving program.
         ser.write(signal_str.encode())
         time.sleep(3)
-        
-        transU = 'U'
         lenU = len(transU)
         ser.write(lenU.encode())
         time.sleep(3)
-
         ser.write(transU.encode())
         time.sleep(3)
 
+        # make the unlock button green and disabled after unlocking the A1339 sensor
         self.unlockBtn.setStyleSheet("QPushButton { background-color: green }")
-        self.unlockBtn.setText("A1339 encoder is now unlocked until power to the encoder is lost")
+        self.unlockBtn.setText("A1339 sensor is now unlocked until power to the sensor is lost")
         self.unlockBtn.setEnabled(False)
 
     def write_to_shad_mem(self):
@@ -207,7 +216,10 @@ class A1339_GUI(QMainWindow):
             # send the transmissions using serial communication.
             # the time.sleep(3) function pauses the code execution for 3 seconds.
             # the pauses ensure that the transmission has been completely sent, received, and handled
-            # by the receiving program.
+            # by the receiving program. the signal_str is sent before each configuration option
+            # transmission. the signal_str is received and handled by the receiving program.
+            # the total length of the transmission (not including the signal_str) is always sent
+            # before the actual transmission, as the length is required by the receiving program.
             ser.write(signal_str.encode())
             time.sleep(3)
             lenA = len(transA)
@@ -278,7 +290,10 @@ class A1339_GUI(QMainWindow):
                 # send the transmissions using serial communication.
                 # the time.sleep(3) function pauses the code execution for 3 seconds.
                 # the pauses ensure that the transmission has been completely sent, received, and handled
-                # by the receiving program.
+                # by the receiving program. the signal_str is sent before each configuration option
+                # transmission. the signal_str is received and handled by the receiving program.
+                # the total length of the transmission (not including the signal_str) is always sent
+                # before the actual transmission, as the length is required by the receiving program.
                 ser.write(signal_str.encode())
                 time.sleep(3)
                 lenD = len(transD)
