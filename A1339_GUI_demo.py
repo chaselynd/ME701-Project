@@ -2,9 +2,17 @@
 # Class: ME 701
 # Assignment: End-Of-Semester Project
 
-# --------------------------------------------------
-# GUI for setting up an Allegro A1339 angle sensor
-# --------------------------------------------------
+# ----------------------------------------------------------
+# ATTENTION: THIS IS A DEMO OF THE ACTUAL A1339 GUI.
+#            THIS DEMO FILE IS IDENTICAL TO THE ORIGINAL,
+#            EXCEPT MANY SERIAL AND TIMING LINES HAVE BEEN
+#            COMMENTED OUT. THIS ALLOWS THE GUI TO RUN
+#            WITHOUT NEEDING AN ACTIVE SERIAL CONNECTION. 
+# ----------------------------------------------------------
+
+# ----------------------------------------------------------
+# Demo GUI for setting up an Allegro A1339 angle sensor
+# ----------------------------------------------------------
 
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QLineEdit, QDialog, 
                              QVBoxLayout, QHBoxLayout, QAction, QMessageBox,
